@@ -13,6 +13,7 @@ import subprocess, shutil, os, sqlite3, re
 import utils
 from email_validator import validate_email as validate_email_, EmailNotValidError
 import idna
+import json
 
 def validate_email(email, mode=None):
 	# Checks that an email address is syntactically valid. Returns True/False.
@@ -266,7 +267,7 @@ def get_mail_domains(env, filter_aliases=lambda alias : True):
 		 + [get_domain(address, as_unicode=False) for address, *_ in get_mail_aliases(env) if filter_aliases(address) ]
 		 )
 
-def add_mail_user(email, pw, privs, env):
+def add_mail_user(email, pw, privs, extra, env):
 	# validate email
 	if email.strip() == "":
 		return ("No email address provided.", 400)
@@ -292,6 +293,11 @@ def add_mail_user(email, pw, privs, env):
 			validation = validate_privilege(p)
 			if validation: return validation
 
+	if extra is None or extra.strip() == "":
+		extra = {}
+	else:
+		extra = dict(item.split(":") for item in extra.split(';') if ":" in item)
+
 	# get the database
 	conn, c = open_database(env, with_connection=True)
 
@@ -300,8 +306,8 @@ def add_mail_user(email, pw, privs, env):
 
 	# add the user to the database
 	try:
-		c.execute("INSERT INTO users (email, password, privileges) VALUES (?, ?, ?)",
-			(email, pw, "\n".join(privs)))
+		c.execute("INSERT INTO users (email, password, privileges, extra) VALUES (?, ?, ?, ?)",
+			(email, pw, "\n".join(privs), json.dumps(extra)))
 	except sqlite3.IntegrityError:
 		return ("User already exists.", 400)
 
