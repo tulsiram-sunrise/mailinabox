@@ -6,7 +6,7 @@ from functools import wraps
 from flask import Flask, request, render_template, abort, Response, send_from_directory, make_response
 
 import auth, utils, multiprocessing.pool
-from mailconfig import get_mail_users, get_mail_users_ex, get_admins, add_mail_user, set_mail_password, remove_mail_user
+from mailconfig import get_mail_users, get_mail_users_ex, get_admins, add_mail_user, set_mail_password, remove_mail_user, get_mail_user_detail
 from mailconfig import get_mail_user_privileges, add_remove_mail_user_privilege
 from mailconfig import get_mail_aliases, get_mail_aliases_ex, get_mail_domains, add_mail_alias, remove_mail_alias
 
@@ -149,6 +149,15 @@ def mail_users():
 		return json_response(get_mail_users_ex(env, with_archived=True))
 	else:
 		return "".join(x+"\n" for x in get_mail_users(env))
+
+
+@app.route('/mail/users/detail')
+@authorized_personnel_only
+def mail_users_detail():
+	try:
+		return get_mail_user_detail(request.form.get('email', ''), env)
+	except ValueError as e:
+		return (str(e), 400)
 
 @app.route('/mail/users/add', methods=['POST'])
 @authorized_personnel_only

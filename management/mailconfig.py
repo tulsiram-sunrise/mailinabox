@@ -106,6 +106,13 @@ def get_mail_users(env):
 	users = [ row[0] for row in c.fetchall() ]
 	return utils.sort_email_addresses(users, env)
 
+def get_mail_user_detail(email, env):
+	c = open_database(env)
+	c.execute('SELECT email, extra, privileges FROM users WHERE email=?', (email))
+	if c.rowcount == 0:
+		return False
+	return c.fetchone()
+
 def get_mail_users_ex(env, with_archived=False):
 	# Returns a complex data structure of all user accounts, optionally
 	# including archived (status="inactive") accounts.
